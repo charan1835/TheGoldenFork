@@ -31,9 +31,9 @@ export default function Footer() {
             Made with love, served with speed.
           </p>
           <div className="social-links">
-            <a href="#" className="social-link">📱</a>
-            <a href="#" className="social-link">📧</a>
-            <a href="#" className="social-link">🐦</a>
+            <a href="https://wa.me/8688605760" className="social-link">📱</a>
+            <a href="mailto:chimbilicharan@gmail.com" className="social-link">📧</a>
+            <a href="https://twitter.com/chimbilicharan" className="social-link">🐦</a>
             <a href="#" className="social-link">📘</a>
           </div>
         </div>
@@ -42,11 +42,11 @@ export default function Footer() {
         <div className="footer-section">
           <h3 className="section-title">Quick Bites</h3>
           <ul className="footer-links">
-            <li><a href="#menu">🍽️ Menu</a></li>
+            <li><Link href="/">🍽️ Menu</Link></li>
             <li><Link href="/about"> 👨‍🍳 Our Story</Link></li>
-            <li><a href="#live">📺 Live Kitchen</a></li>
-            <li><a href="#reviews">⭐ Reviews</a></li>
-            <li><a href="#contact">📞 Contact</a></li>
+            <li><Link href="#live">📺 Live Kitchen</Link></li>
+            <li><Link href="#reviews">⭐ Reviews</Link></li>
+            <li><Link href="/connect">📞 Contact</Link></li>
           </ul>
         </div>
 
