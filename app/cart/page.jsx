@@ -110,7 +110,7 @@ export default function CartPage() {
 
   const calculateDeliveryFee = () => {
     const subtotal = calculateSubtotal();
-    return subtotal > 500 ? 0 : 10;
+    return subtotal > 500 ? 0 : 50;
   };
 
   const calculateDiscount = () => {
