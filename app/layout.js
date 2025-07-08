@@ -21,22 +21,22 @@ function WelcomeToast() {
 
       // Cute Welcome Toast
       toast.success(`👋 Welcome ${username}!`, {
-        duration: 220,
+        duration: 2200,
       });
 
       // After 2s, drop the dinner invite
       setTimeout(() => {
         toast("Did you miss me babe? 🥺 Come, let’s have a dinner date ❤️", {
-          duration: 300,
+          duration: 3000,
         });
 
         // Optional second line toast
         setTimeout(() => {
           toast("Or just order something and enjoy your meal 🍔", {
-            duration: 300,
+            duration: 3000,
           });
-        }, 250);
-      }, 200);
+        }, 2500);
+      }, 2000);
     }
   }, [isSignedIn, user]);
 
