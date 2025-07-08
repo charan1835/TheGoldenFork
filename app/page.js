@@ -1,16 +1,24 @@
 // app/page.js
 import "./globals.css";
-import CategoryList from "./_components/CategoryList.jsx";
-import MenuItems from "./_components/Menuitem";
-//import CookingGIF from "./_Components/CookingGif";
-//import Hero from "./_Components/Hero";
+import dynamic from "next/dynamic";
 import Footer from "./_components/Footer";
-export default async function Page() {
+import { Suspense } from "react";
 
+// Optional: Lazy load for smooth UX
+const MenuItems = dynamic(() => import("./_components/Menuitem"), { ssr: false });
+const CategoryList = dynamic(() => import("./_components/CategoryList"), { ssr: false });
+
+export default async function Page() {
   return (
     <>
-      <CategoryList />
-      <MenuItems />
+      <Suspense fallback={<div className="p-4 text-gray-600">Loading Categories...</div>}>
+        <CategoryList />
+      </Suspense>
+
+      <Suspense fallback={<div className="p-4 text-gray-600">Loading Menu...</div>}>
+        <MenuItems />
+      </Suspense>
+
       <Footer />
     </>
   );
