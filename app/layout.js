@@ -3,9 +3,11 @@
 import { ClerkProvider, useUser } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import "./globals.css";
+// 🔄 CHANGE THIS:
 import Header from "./_components/Header";
-import { Toaster, toast } from "react-hot-toast";
 import { CartProvider } from "./context/CartContext";
+      
+import { Toaster, toast } from "react-hot-toast";
 
 import { useEffect, useState } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
