@@ -314,91 +314,67 @@ const clearUserCart = async (email) => {
   }
 };
 
-// 7️⃣ Create User Order (with enhanced debugging)
-const createUserOrder = async ({
-  useremail,
-  username,
-  total,
-  subtotal,
-  phonenumber,
-  orderdate,
-  paymentmode,
-  items,
-  gst,
-  deliveryfee,
-  address
-}) => {
-  console.log("🔍 Creating order with data:", {
-    useremail,
-    username,
-    total,
-    subtotal,
-    phonenumber,
-    orderdate,
-    paymentmode,
-    items,
-    gst,
-    deliveryfee,
-    address
-  });
-
+const createOrder = async (orderData) => {
+  console.log("💾 Creating new order:", orderData);
+  
   const mutation = gql`
-    mutation CreateUserOrder(
-      $useremail: String!
+    mutation CreateOrder(
       $username: String!
+      $useremail: String!
       $total: Float!
       $subtotal: Float!
-      $phonenumber: String!
       $orderdate: DateTime!
       $paymentmode: String!
-      $items: String!
+      $items: Json!
       $gst: Float!
       $deliveryfee: Float!
       $address: String!
+      $statue: String
     ) {
-      createUserOrder(
+      createOrder(
         data: {
-          useremail: $useremail
           username: $username
+          useremail: $useremail
           total: $total
           subtotal: $subtotal
-          phonenumber: $phonenumber
           orderdate: $orderdate
           paymentmode: $paymentmode
           items: $items
           gst: $gst
           deliveryfee: $deliveryfee
           address: $address
+          statue: $statue
         }
       ) {
         id
-        useremail
         username
+        useremail
         total
         subtotal
-        phonenumber
         orderdate
         paymentmode
         items
         gst
         deliveryfee
         address
+        statue
+        createdAt
       }
     }
   `;
 
   const variables = {
-    useremail,
-    username,
-    total: parseFloat(total),
-    subtotal: parseFloat(subtotal),
-    phonenumber: String(phonenumber),
-    orderdate,
-    paymentmode,
-    items,
-    gst: parseFloat(gst),
-    deliveryfee: parseFloat(deliveryfee),
-    address
+    username: orderData.username,
+    useremail: orderData.useremail,
+    total: parseFloat(orderData.total),
+    subtotal: parseFloat(orderData.subtotal),
+    orderdate: orderData.orderdate,
+    paymentmode: orderData.paymentmode,
+    items: orderData.items, // Direct JSON object, not string
+    gst: parseFloat(orderData.gst),
+    deliveryfee: parseFloat(orderData.deliveryfee),
+    address: orderData.address,
+    statue: orderData.statue || "pending"
   };
 
   console.log("📤 Sending variables:", variables);
@@ -406,51 +382,35 @@ const createUserOrder = async ({
   try {
     const res = await requestWithRetry(MASTER_URL, mutation, variables, requestHeaders);
     console.log("✅ Order created successfully:", res);
-
-    await delay(500); // Small delay before publishing
-
-    // Publish the created order
+    
+    // Publish the order
     const publishMutation = gql`
-      mutation PublishUserOrder($id: ID!) {
-        publishUserOrder(where: { id: $id }) {
+      mutation PublishOrder($id: ID!) {
+        publishOrder(where: { id: $id }, to: PUBLISHED) {
           id
         }
       }
     `;
-
-    if (res?.createUserOrder?.id) {
-      console.log("📢 Publishing order with ID:", res.createUserOrder.id);
-      const publishRes = await requestWithRetry(MASTER_URL, publishMutation, { id: res.createUserOrder.id }, requestHeaders);
-      console.log("✅ Order published successfully:", publishRes);
-    } else {
-      console.error("❌ No order ID returned from creation");
-    }
-
-    // Clear user orders cache
-    cache.delete(`user-orders-${useremail}`);
-
-    return res;
+    
+    await requestWithRetry(MASTER_URL, publishMutation, { id: res.createOrder.id }, requestHeaders);
+    console.log("✅ Order published successfully");
+    
+    return res.createOrder;
+    
   } catch (error) {
-    console.error("❌ Error creating user order:", error);
+    console.error("❌ Error creating order:", error);
     console.error("Error details:", error.response?.errors || error.message);
     throw error;
   }
 };
 
-// 8️⃣ Get User Orders - OPTIMIZED VERSION
-const getUserOrders = async (email) => {
-  console.log("🔍 Fetching orders for email:", email);
-  
-  const cacheKey = `user-orders-${email}`;
-  const cached = getCachedData(cacheKey);
-  if (cached) return cached;
-
-  // Simplified query - use only one query that's most likely to work
+const getUserOrders = async (userEmail) => {
   const query = gql`
-    query GetUserOrders($email: String!) {
-      userOrders(where: { useremail: $email }, orderBy: orderdate_DESC) {
+    query GetUserOrders($useremail: String!) {
+      orders(where: { useremail: $useremail }, orderBy: createdAt_DESC) {
         id
         username
+        useremail
         total
         subtotal
         orderdate
@@ -459,58 +419,52 @@ const getUserOrders = async (email) => {
         gst
         deliveryfee
         address
-        useremail
+        statue
+        createdAt
       }
     }
   `;
 
   try {
-    const res = await requestWithRetry(MASTER_URL, query, { email }, requestHeaders);
-    console.log("✅ Orders fetched successfully:", res);
-    
-    const orders = res.userOrders || [];
-    console.log("📊 Number of orders found:", orders.length);
-    
-    const result = { userOrders: orders };
-    setCachedData(cacheKey, result);
-    return result;
-    
+    const res = await requestWithRetry(MASTER_URL, query, { useremail: userEmail }, requestHeaders);
+    return res.orders;
   } catch (error) {
-    console.error("❌ Error fetching user orders:", error);
-    
-    // If the main query fails, try a simpler fallback
-    try {
-      console.log("🔄 Trying fallback query without orderBy");
-      const fallbackQuery = gql`
-        query GetUserOrders($email: String!) {
-          userOrders(where: { useremail: $email }) {
-            id
-            username
-            total
-            subtotal
-            orderdate
-            paymentmode
-            items
-            gst
-            deliveryfee
-            address
-            useremail
-          }
-        }
-      `;
-      
-      const fallbackRes = await requestWithRetry(MASTER_URL, fallbackQuery, { email }, requestHeaders);
-      const orders = fallbackRes.userOrders || [];
-      const result = { userOrders: orders };
-      setCachedData(cacheKey, result);
-      return result;
-      
-    } catch (fallbackError) {
-      console.error("❌ Fallback query also failed:", fallbackError);
-      return { userOrders: [] };
-    }
+    console.error("❌ Error fetching orders:", error);
+    throw error;
   }
 };
+
+const updateOrderStatus = async (orderId, status) => {
+  const mutation = gql`
+    mutation UpdateOrderStatus($id: ID!, $status: String!) {
+      updateOrder(where: { id: $id }, data: { status: $status }) {
+        id
+        statue
+      }
+    }
+  `;
+
+  try {
+    const res = await requestWithRetry(MASTER_URL, mutation, { id: orderId, status }, requestHeaders);
+    
+    // Publish the updated order
+    const publishMutation = gql`
+      mutation PublishOrder($id: ID!) {
+        publishOrder(where: { id: $id }, to: PUBLISHED) {
+          id
+        }
+      }
+    `;
+    
+    await requestWithRetry(MASTER_URL, publishMutation, { id: orderId }, requestHeaders);
+    
+    return res.updateOrder;
+  } catch (error) {
+    console.error("❌ Error updating order status:", error);
+    throw error;
+  }
+};
+
 
 
 
@@ -522,7 +476,8 @@ export default {
   getUserCart,
   deleteCartItem,
   clearUserCart,
-  createUserOrder,
+  createOrder,
   getUserOrders,
+  updateOrderStatus,
   
 };

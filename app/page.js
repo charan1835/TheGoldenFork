@@ -7,7 +7,7 @@ export default async function Page() {
   return (
     <>
       <HomeClientWrapper />
-      <Hero />
+      //<Hero />
       <Footer />
     </>
   );

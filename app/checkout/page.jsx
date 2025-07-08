@@ -126,7 +126,6 @@ export default function CheckoutPage() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handlePlaceOrder = async () => {
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
@@ -153,10 +152,32 @@ export default function CheckoutPage() {
         couponDiscount: 0,
       };
   
-      // Step 1: Simulate order placement (replace with real API later)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Step 1: SAVE ORDER TO DATABASE
+      console.log("💾 Saving order to database...");
+      const savedOrder = await GlobalApi.createOrder({
+        username: user?.fullName || "Guest",
+        useremail: user.primaryEmailAddress.emailAddress,
+        total: orderData.total,
+        subtotal: orderData.subtotal,
+        orderdate: orderData.orderDate,
+        paymentmode: orderData.paymentMethod,
+        items: cartItems.map(item => ({
+          id: item.id,
+          email: item.email,
+          image: item.image,
+          itemname: item.itemname,
+          price: item.price
+        })), // Direct JSON object, not string
+        gst: orderData.gst,
+        deliveryfee: orderData.deliveryFee,
+        address: `${orderData.deliveryAddress}${orderData.landmark ? ', ' + orderData.landmark : ''}`,
+        statue: "pending"
+      });
+  
+      console.log("✅ Order saved successfully:", savedOrder);
   
       // Step 2: Clear backend cart
+      console.log("🧹 Clearing cart after successful order save...");
       await GlobalApi.clearUserCart(user.primaryEmailAddress.emailAddress);
   
       // Step 3: Local state cleanup
@@ -193,7 +214,7 @@ export default function CheckoutPage() {
         `*🧾 Order Details:*\n${itemLines}\n\n` +
         `💵 *Subtotal:* ₹${subtotal.toFixed(2)}\n` +
         `🚚 *Delivery Fee:* ₹${deliveryFee.toFixed(2)}\n` +
-        `GST *GST:* ₹${gst.toFixed(2)}\n` +
+        `🏷️ *GST:* ₹${gst.toFixed(2)}\n` +
         (appliedCoupon ? `🏷️ *Coupon Discount:* -₹${couponDiscount.toFixed(2)}\n` : "") +
         `\n🔐 *Total Payable:* ₹${total.toFixed(2)}\n\n` +
         `✅ *Payment Mode:* Cash on Delivery\n` +
@@ -210,27 +231,19 @@ export default function CheckoutPage() {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   
       if (isMobile) {
-        // Mobile: Direct WhatsApp open
         window.location.href = whatsappLink;
       } else {
-        // Desktop: Open in new tab + confirmation fallback
         window.open(whatsappLink, "_blank");
         router.push("/order-confirmation");
       }
   
     } catch (error) {
       console.error("Error placing order:", error);
-  
-      if (error.message.includes("cart")) {
-        toast.error("Order placed but failed to clear cart. Please refresh the page.");
-      } else {
-        toast.error("Failed to place order. Please try again.");
-      }
+      toast.error("Failed to place order. Please try again.");
     } finally {
       setPlacing(false);
     }
   };
-  
 
   const paymentMethods = [
     {
