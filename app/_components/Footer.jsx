@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-
+import { Loader2 } from 'lucide-react'
 export default function Footer() {
   const [email, setEmail] = useState('')
   const [isSubscribed, setIsSubscribed] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleSubscribe = (e) => {
     e.preventDefault()
@@ -16,6 +17,13 @@ export default function Footer() {
     }
   }
 
+  if(loading){
+      return(
+      <div className="flex justify-center items-center h-screen">
+      <Loader2 className="animate-spin" />
+    </div>
+  
+  )}
   return (
     <footer className="footer-container">
       {/* Main Footer Content */}
