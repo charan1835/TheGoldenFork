@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.23.3",
+    "@stripe/stripe-js": "^7.8.0",
     "@vercel/speed-insights": "^1.2.0",
     "classnames": "^2.5.1",
     "framer-motion": "^12.23.0",
@@ -20,7 +21,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
-    "sonner": "^2.0.6"
+    "sonner": "^2.0.6",
+    "stripe": "^18.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

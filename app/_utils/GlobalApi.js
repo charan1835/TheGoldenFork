@@ -437,7 +437,7 @@ const getUserOrders = async (userEmail) => {
 const updateOrderStatus = async (orderId, status) => {
   const mutation = gql`
     mutation UpdateOrderStatus($id: ID!, $status: String!) {
-      updateOrder(where: { id: $id }, data: { status: $status }) {
+      updateOrder(where: { id: $id }, data: { statue: $status }) {
         id
         statue
       }
@@ -465,10 +465,112 @@ const updateOrderStatus = async (orderId, status) => {
   }
 };
 
+// Get all orders for admin dashboard
+const getAllOrders = async () => {
+  const query = gql`
+    query GetAllOrders {
+      orders(orderBy: createdAt_DESC) {
+        id
+        username
+        useremail
+        total
+        subtotal
+        orderdate
+        paymentmode
+        items
+        gst
+        deliveryfee
+        address
+        statue
+        createdAt
+      }
+    }
+  `;
 
+  try {
+    const res = await requestWithRetry(MASTER_URL, query, {}, requestHeaders);
+    return res.orders || [];
+  } catch (error) {
+    console.error("❌ Error fetching all orders:", error);
+    throw error;
+  }
+};
+// Add this function to your existing GlobalApi.js file
 
+// 7️⃣ Create Contact Submission
+// Updated createContactSubmission function that accepts 'message' parameter
+const createContactSubmission = async (name, email, message) => {
+  console.log("💌 Creating contact submission:", { name, email, message });
+  
+  const mutation = gql`
+    mutation CreateContactSubmission(
+      $name: String!
+      $email: String!
+      $description: String!
+    ) {
+      createContact(
+        data: {
+          name: $name
+          email: $email
+          description: $description
+        }
+      ) {
+        id
+        name
+        email
+        description
+        createdAt
+      }
+    }
+  `;
 
+  // Map the 'message' parameter to 'description' for GraphQL
+  const variables = {
+    name: name.trim(),
+    email: email.trim(),
+    description: message.trim() // Map message -> description
+  };
 
+  try {
+    console.log("🚀 Sending GraphQL variables:", variables);
+    
+    // Step 1: Create the contact submission
+    const res = await requestWithRetry(MASTER_URL, mutation, variables, requestHeaders);
+    console.log("✅ Contact submission created:", res);
+    
+    // Step 2: Publish the contact submission
+    if (res.createContact?.id) {
+      await delay(500); // Small delay between requests
+      
+      const publishMutation = gql`
+        mutation PublishContact($id: ID!) {
+          publishContact(where: { id: $id }, to: PUBLISHED) {
+            id
+          }
+        }
+      `;
+      
+      await requestWithRetry(MASTER_URL, publishMutation, { id: res.createContact.id }, requestHeaders);
+      console.log("✅ Contact submission published successfully");
+    }
+    
+    return res.createContact;
+    
+  } catch (error) {
+    console.error("❌ Error creating contact submission:", error);
+    
+    // Enhanced error logging
+    if (error.response) {
+      console.error("GraphQL errors:", error.response.errors);
+      console.error("GraphQL data:", error.response.data);
+    }
+    
+    console.error("Error details:", error.response?.errors || error.message);
+    throw error;
+  }
+};
+
+// Add to your export default object:
 export default {
   getCategory,
   getMenuItemsByCategory,
@@ -479,5 +581,8 @@ export default {
   createOrder,
   getUserOrders,
   updateOrderStatus,
-  
+  getAllOrders,
+  createContactSubmission,
 };
+
+

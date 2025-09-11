@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -23,6 +23,13 @@ export default function Header() {
   const { cartCount } = useCart();
   const { user } = useUser();
 
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('siteTheme') : null
+    if (saved === 'dark') {
+      document.documentElement.classList.add('dark')
+    }
+  }, [])
+
   return (
     <header className="bg-gradient-to-r from-gray-900 to-gray-800 text-white px-6 py-4 flex justify-between items-center shadow-lg relative z-50">
       <Link
@@ -41,6 +48,17 @@ export default function Header() {
       </nav>
 
       <div className="flex items-center gap-4">
+        <button
+          onClick={() => {
+            const root = document.documentElement
+            root.classList.toggle('dark')
+            const isDark = root.classList.contains('dark')
+            localStorage.setItem('siteTheme', isDark ? 'dark' : 'light')
+          }}
+          className="hidden md:inline px-3 py-1.5 rounded-full border border-white/20 text-sm hover:bg-white/10"
+        >
+          Theme
+        </button>
         <Link
           href="/cart"
           className="relative group p-2 rounded-full hover:bg-gray-700 transition"
