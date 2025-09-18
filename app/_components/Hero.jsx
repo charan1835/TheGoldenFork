@@ -2,7 +2,7 @@
 
 import React from "react";
 import PrismBackground from "./animations/PrismBackground";
-import Shuffle from "./Shuffle";
+import TrueFocus from "./TrueFocus";
 import ElectricButton from "./animations/ElectricButton";
 import Link from "next/link";
 
@@ -12,20 +12,15 @@ export default function Hero() {
       <PrismBackground className="overflow-hidden">
         <div className="mx-auto max-w-6xl px-6 pt-20 pb-16 sm:pt-24 sm:pb-20 md:pt-28 md:pb-24 lg:pt-32 lg:pb-28">
           <div className="text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+            <h1 className="text-4xl font-extrabold tracking-tight leading-tight text-foreground sm:text-5xl md:text-6xl">
               Fresh, Fast, and {" "}
-              <Shuffle
-                text="Seriously Tasty"
-                shuffleDirection="right"
-                duration={0.200}
-                animationMode="evenodd"
-                shuffleTimes={10}
-                ease="easeOut"
-                stagger={0.03}
-                threshold={0.1}
-                triggerOnce={true}
-                triggerOnHover={true}
-                respectReducedMotion={true}
+              <TrueFocus
+                sentence="Seriously Tasty"
+                manualMode={true}
+                blurAmount={5}
+                borderColor="#ff3b30"
+                animationDuration={2}
+                pauseBetweenAnimations={1}
                 className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
               />
             </h1>

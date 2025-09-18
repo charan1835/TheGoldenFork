@@ -6,6 +6,7 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
   const startPosRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const gridRef = useRef(null);
 
   // Create a large tiled grid for the illusion of infinity
   const tiled = useMemo(() => {
@@ -34,6 +35,12 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
     if (!el) return;
     isDraggingRef.current = true;
     el.classList.add("dragging");
+    // Converge animation
+    const grid = gridRef.current;
+    if (grid) {
+      grid.classList.remove("blast");
+      grid.classList.add("converge");
+    }
     startPosRef.current = {
       x: e.pageX - el.offsetLeft,
       y: e.pageY - el.offsetTop,
@@ -45,11 +52,25 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
   const onMouseLeave = () => {
     isDraggingRef.current = false;
     containerRef.current?.classList.remove("dragging");
+    const grid = gridRef.current;
+    if (grid) {
+      grid.classList.remove("converge");
+    }
   };
 
   const onMouseUp = () => {
     isDraggingRef.current = false;
     containerRef.current?.classList.remove("dragging");
+    const grid = gridRef.current;
+    if (grid) {
+      grid.classList.remove("converge");
+      // trigger blast animation
+      grid.classList.remove("blast");
+      // Force reflow to restart animation
+      // eslint-disable-next-line no-unused-expressions
+      grid.offsetHeight;
+      grid.classList.add("blast");
+    }
   };
 
   const onMouseMove = (e) => {
@@ -83,8 +104,26 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
         onMouseLeave={onMouseLeave}
         onMouseUp={onMouseUp}
         onMouseMove={onMouseMove}
+        onTouchStart={(e) => {
+          const grid = gridRef.current;
+          if (grid) {
+            grid.classList.remove("blast");
+            grid.classList.add("converge");
+          }
+        }}
+        onTouchEnd={(e) => {
+          const grid = gridRef.current;
+          if (grid) {
+            grid.classList.remove("converge");
+            grid.classList.remove("blast");
+            // restart blast
+            // eslint-disable-next-line no-unused-expressions
+            grid.offsetHeight;
+            grid.classList.add("blast");
+          }
+        }}
       >
-        <div className="relative grid auto-rows-[220px] grid-cols-[repeat(10,220px)] gap-4 p-6">
+        <div ref={gridRef} className="relative grid auto-rows-[220px] grid-cols-[repeat(10,220px)] gap-4 p-6">
           {tiled.tiles.map((it) => (
             <button
               type="button"
@@ -111,8 +150,28 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
         </div>
       </div>
       <style jsx>{`
-        #infinite-grid-menu-canvas { cursor: grab; }
+        #infinite-grid-menu-canvas { cursor: grab; scrollbar-width: none; -ms-overflow-style: none; }
+        #infinite-grid-menu-canvas::-webkit-scrollbar { display: none; }
         #infinite-grid-menu-canvas.dragging { cursor: grabbing; }
+        /* Converge to center while pressed */
+        .converge {
+          animation: convergeToCenter 250ms ease forwards;
+          transform-origin: center center;
+        }
+        /* Blast out with a bounce after release */
+        .blast {
+          animation: blastOut 550ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          transform-origin: center center;
+        }
+        @keyframes convergeToCenter {
+          0% { transform: scale(1); filter: blur(0px); }
+          100% { transform: scale(0.05); filter: blur(1px); }
+        }
+        @keyframes blastOut {
+          0% { transform: scale(0.05); filter: blur(1px); }
+          60% { transform: scale(1.08); filter: blur(0px); }
+          100% { transform: scale(1); }
+        }
       `}</style>
     </div>
   );

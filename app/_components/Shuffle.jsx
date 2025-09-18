@@ -50,8 +50,8 @@ export default function Shuffle({
     },
     enter: (i) => ({
       opacity: [0, 1],
-      y: [6, 0],
-      transition: { duration: 0.4, delay: i * stagger, ease: "easeOut" },
+      y: [8, 0],
+      transition: { duration: 0.5, delay: i * stagger, ease: "easeOut" },
     }),
   };
 
@@ -68,7 +68,7 @@ export default function Shuffle({
           key={i}
           custom={i}
           variants={variants}
-          style={{ display: "inline-block" }}
+          style={{ display: "inline-block", willChange: "transform" }}
           transition={{ staggerChildren: stagger }}
         >
           {c === " " ? "\u00A0" : c}
