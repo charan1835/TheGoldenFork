@@ -9,7 +9,7 @@ export default function Shuffle({
   shuffleDirection = "right",
   duration = 0.35,
   animationMode = "evenodd",
-  shuffleTimes = 1,
+  shuffleTimes = 10,
   ease = "easeOut",
   stagger = 0.03,
   threshold = 0.1,

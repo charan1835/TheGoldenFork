@@ -17,7 +17,7 @@ export default function Hero() {
               <Shuffle
                 text="Seriously Tasty"
                 shuffleDirection="right"
-                duration={0.10}
+                duration={0.200}
                 animationMode="evenodd"
                 shuffleTimes={10}
                 ease="easeOut"

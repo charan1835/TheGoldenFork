@@ -32,7 +32,7 @@ export default function Header() {
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 px-6 py-3 flex justify-between items-center border-b border-border/60 bg-surface/60 backdrop-blur-md text-foreground shadow-soft">
+    <header className="sticky top-0 z-50 px-4 sm:px-6 py-3 flex justify-between items-center border-b border-border/60 bg-background/90 backdrop-blur-xl text-foreground shadow-soft">
       <Link
         href="/"
         className="text-2xl font-extrabold tracking-tight flex items-center gap-3 transition-transform duration-300 hover:scale-105"

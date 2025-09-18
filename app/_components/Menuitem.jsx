@@ -8,6 +8,7 @@ import GlobalApi from "../_utils/GlobalApi";
 import { useCart } from "../context/CartContext";
 import { ShoppingCart, Star, Loader2, IndianRupee } from "lucide-react";
 import GlareCard from "./animations/GlareCard";
+import InfiniteMenu from "./InfiniteMenu";
 
 function MenuItems() {
   const [menuItems, setMenuItems] = useState([]);
@@ -69,6 +70,21 @@ function MenuItems() {
     return null;
   }
 
+  const flowingItems = menuItems.map((m) => ({
+    image: m.img?.url,
+    link: `#`,
+    title: m.name,
+    description: m.description,
+    price: m.price,
+    _raw: m,
+  }));
+
+  const handlePick = (it) => {
+    if (it?._raw) {
+      handleAddToCart(it._raw);
+    }
+  };
+
   return (
     <div className="px-4 py-6 sm:px-6 md:px-8">
       <div className="mb-6">
@@ -86,68 +102,7 @@ function MenuItems() {
           <span className="ml-3 text-gray-600">Loading menu items...</span>
         </div>
       ) : menuItems.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-          {menuItems.map((item, index) => (
-            <GlareCard key={index} className="overflow-hidden cursor-pointer">
-              <div className="h-48 bg-gradient-to-br from-orange-100 to-red-100 relative overflow-hidden">
-                {item.img?.url ? (
-                  <img
-                    src={item.img.url}
-                    alt={item.name}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
-                      <span className="text-gray-500 text-xs">No Image</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-semibold text-gray-800 flex-1 mr-2 line-clamp-1">
-                    {item.name}
-                  </h3>
-                  <div className="flex items-center text-orange-600 font-bold text-lg">
-                    <IndianRupee className="w-4 h-4" />
-                    <span>{item.price}</span>
-                  </div>
-                </div>
-
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
-                  {item.description}
-                </p>
-
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <div className="flex items-center text-yellow-500">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3 h-3 ${i < 4 ? "fill-current" : ""}`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-gray-600 text-xs ml-1">(4.2)</span>
-                  </div>
-
-                  <button
-                    onClick={() => handleAddToCart(item)}
-                    className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 transition-colors duration-200 text-sm font-medium flex items-center gap-1"
-                  >
-                    <ShoppingCart className="w-3 h-3" />
-                    Add
-                  </button>
-                </div>
-              </div>
-            </GlareCard>
-          ))}
-        </div>
+        <InfiniteMenu items={flowingItems} onItemClick={handlePick} />
       ) : (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
