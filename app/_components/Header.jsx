@@ -93,21 +93,7 @@ export default function Header() {
           </div>
         </SignedOut>
 
-        {/* Mobile auth buttons */}
-        <SignedOut>
-          <div className="flex md:hidden gap-2">
-            <SignInButton mode="modal">
-              <button className="px-3 py-1.5 rounded-full border border-border/70 text-sm hover:bg-foreground/5">
-                Sign In
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-sm shadow-soft">
-                Sign Up
-              </button>
-            </SignUpButton>
-          </div>
-        </SignedOut>
+        {/* Mobile auth buttons moved into BubbleMenu */}
 
         <SignedIn>
           <UserButton afterSignOutUrl="/" />
@@ -122,6 +108,25 @@ export default function Header() {
               { label: 'orders', href: '/my-orders', ariaLabel: 'My Orders', rotation: 8, hoverStyles: { bgColor: '#f59e0b', textColor: '#ffffff' } },
               { label: 'connect', href: '/connect', ariaLabel: 'Connect', rotation: 8, hoverStyles: { bgColor: '#ef4444', textColor: '#ffffff' } },
               { label: 'cart', href: '/cart', ariaLabel: 'Cart', rotation: -8, hoverStyles: { bgColor: '#8b5cf6', textColor: '#ffffff' } },
+              // Auth actions (mobile)
+              { label: 'sign in', onClick: () => document.querySelector('[data-modal-root]') || null, ariaLabel: 'Sign In', rotation: -6, hoverStyles: { bgColor: '#111827', textColor: '#ffffff' }, render: (
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="w-full rounded-xl border border-border/60 bg-surface px-4 py-3 text-center text-sm font-semibold capitalize shadow-soft">
+                      🔐 Sign In
+                    </button>
+                  </SignInButton>
+                </SignedOut>
+              ) },
+              { label: 'sign up', onClick: () => null, ariaLabel: 'Sign Up', rotation: 6, hoverStyles: { bgColor: '#111827', textColor: '#ffffff' }, render: (
+                <SignedOut>
+                  <SignUpButton mode="modal">
+                    <button className="w-full rounded-xl border border-border/60 bg-foreground text-background px-4 py-3 text-center text-sm font-semibold capitalize shadow-soft">
+                      ✍️ Sign Up
+                    </button>
+                  </SignUpButton>
+                </SignedOut>
+              ) },
             ]}
             menuAriaLabel="Toggle navigation"
             menuBg="#ffffff"

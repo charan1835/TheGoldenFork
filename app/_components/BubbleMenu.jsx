@@ -54,32 +54,70 @@ export default function BubbleMenu({
             className="absolute right-0 top-12 z-20 w-[min(92vw,420px)] rounded-2xl border border-border/60 bg-background/95 p-3 shadow-elevated"
           >
             <nav className="grid grid-cols-2 gap-3">
-              {items.map((item, idx) => (
-                <motion.a
-                  key={item.label + idx}
-                  href={item.href}
-                  aria-label={item.ariaLabel || item.label}
-                  initial={{ y: 8, opacity: 0, rotate: item.rotation || 0 }}
-                  animate={{ y: 0, opacity: 1, rotate: 0 }}
-                  transition={{ delay: idx * staggerDelay, duration: animationDuration, ease: animationEase }}
-                  className="rounded-xl border border-border/60 bg-surface px-4 py-3 text-center text-sm font-semibold capitalize shadow-soft transition active:scale-[0.98]"
-                  style={{
-                    '--hover-bg': item.hoverStyles?.bgColor || menuBg,
-                    '--hover-color': item.hoverStyles?.textColor || menuContentColor,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = item.hoverStyles?.bgColor || menuBg;
-                    e.currentTarget.style.color = item.hoverStyles?.textColor || menuContentColor;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '';
-                    e.currentTarget.style.color = '';
-                  }}
-                  onClick={() => setOpen(false)}
-                >
-                  {item.label}
-                </motion.a>
-              ))}
+              {items.map((item, idx) => {
+                const baseProps = {
+                  key: (item.label || 'item') + idx,
+                  initial: { y: 8, opacity: 0, rotate: item.rotation || 0 },
+                  animate: { y: 0, opacity: 1, rotate: 0 },
+                  transition: { delay: idx * staggerDelay, duration: animationDuration, ease: animationEase },
+                };
+
+                if (item.render) {
+                  return (
+                    <motion.div {...baseProps}>
+                      <div onClick={() => setOpen(false)}>
+                        {item.render}
+                      </div>
+                    </motion.div>
+                  );
+                }
+
+                if (item.onClick && !item.href) {
+                  return (
+                    <motion.button
+                      {...baseProps}
+                      type="button"
+                      aria-label={item.ariaLabel || item.label}
+                      onClick={() => { item.onClick(); setOpen(false); }}
+                      className="rounded-xl border border-border/60 bg-surface px-4 py-3 text-center text-sm font-semibold capitalize shadow-soft transition active:scale-[0.98]"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = item.hoverStyles?.bgColor || menuBg;
+                        e.currentTarget.style.color = item.hoverStyles?.textColor || menuContentColor;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '';
+                        e.currentTarget.style.color = '';
+                      }}
+                    >
+                      {item.label}
+                    </motion.button>
+                  );
+                }
+
+                return (
+                  <motion.a
+                    {...baseProps}
+                    href={item.href}
+                    aria-label={item.ariaLabel || item.label}
+                    className="rounded-xl border border-border/60 bg-surface px-4 py-3 text-center text-sm font-semibold capitalize shadow-soft transition active:scale-[0.98]"
+                    style={{
+                      '--hover-bg': item.hoverStyles?.bgColor || menuBg,
+                      '--hover-color': item.hoverStyles?.textColor || menuContentColor,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = item.hoverStyles?.bgColor || menuBg;
+                      e.currentTarget.style.color = item.hoverStyles?.textColor || menuContentColor;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '';
+                      e.currentTarget.style.color = '';
+                    }}
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </motion.a>
+                );
+              })}
             </nav>
           </motion.div>
         )}
