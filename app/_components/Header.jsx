@@ -44,7 +44,7 @@ export default function Header() {
         className="text-2xl font-extrabold tracking-tight flex items-center gap-3 transition-transform duration-300 hover:scale-105"
       >
         <UtensilsCrossed className="w-7 h-7 text-amber-400 animate-pulse" />
-        <span className="text-amber-300">Madeena Restaurant</span>
+        <span className="text-amber-300">The Golden Fork Restaurant</span>
       </Link>
 
       <nav className="hidden md:flex gap-2 text-sm font-medium tracking-wide">
