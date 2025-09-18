@@ -20,11 +20,14 @@ function MenuItems() {
   const { incrementCartCount, fetchCartCount, cartCount } = useCart();
 
   useEffect(() => {
-    if (selectedCategory) {
-      getMenuItems(selectedCategory);
-    } else {
-      setMenuItems([]);
-    }
+    const load = async () => {
+      if (selectedCategory) {
+        await getMenuItems(selectedCategory);
+      } else {
+        await getAllItems();
+      }
+    };
+    load();
   }, [selectedCategory]);
 
   const getMenuItems = async (categorySlug) => {
@@ -34,6 +37,19 @@ function MenuItems() {
       setMenuItems(resp.menuitems || []);
     } catch (error) {
       console.error("Error fetching menu items:", error);
+      setMenuItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAllItems = async () => {
+    try {
+      setLoading(true);
+      const resp = await GlobalApi.getAllMenuItems();
+      setMenuItems(resp.menuitems || []);
+    } catch (error) {
+      console.error("Error fetching all menu items:", error);
       setMenuItems([]);
     } finally {
       setLoading(false);
@@ -66,10 +82,6 @@ function MenuItems() {
     }
   };
 
-  if (!selectedCategory) {
-    return null;
-  }
-
   const flowingItems = menuItems.map((m) => ({
     image: m.img?.url,
     link: `#`,
@@ -88,11 +100,11 @@ function MenuItems() {
   return (
     <div className="px-4 py-6 sm:px-6 md:px-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 capitalize">
-          {selectedCategory.replace(/([A-Z])/g, " $1").trim()} Menu
+        <h2 className="text-2xl font-bold text-foreground capitalize">
+          {selectedCategory ? `${selectedCategory.replace(/([A-Z])/g, " $1").trim()} Menu` : 'All Menu Items'}
         </h2>
-        <p className="text-gray-600 mt-1">
-          Discover delicious {selectedCategory} dishes
+        <p className="text-muted-foreground mt-1">
+          {selectedCategory ? `Discover delicious ${selectedCategory} dishes` : 'Browse everything fresh from our kitchen'}
         </p>
       </div>
 

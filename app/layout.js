@@ -42,7 +42,7 @@ export default function RootLayout({ children }) {
 
   return (
     <ClerkProvider>
-      <html lang="en" className="bg-background text-foreground">
+      <html lang="en" className="dark bg-background text-foreground">
         <body className={`${inter.className} antialiased selection:bg-primary/15 selection:text-foreground` }>
           <CartProvider>
             <WelcomeToast />

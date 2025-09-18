@@ -119,6 +119,33 @@ const getMenuItemsByCategory = async (slug) => {
   }
 };
 
+// 2.1️⃣ Get All Menu Items (no category filter)
+const getAllMenuItems = async () => {
+  const cacheKey = 'menu-items-all';
+  const cached = getCachedData(cacheKey);
+  if (cached) return cached;
+
+  const query = gql`
+    query GetAllMenuItems {
+      menuitems {
+        id
+        name
+        price
+        description
+        img { url }
+      }
+    }
+  `;
+  try {
+    const data = await requestWithRetry(MASTER_URL, query, {}, requestHeaders);
+    setCachedData(cacheKey, data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching all menu items:', error);
+    return { menuitems: [] };
+  }
+};
+
 // 3️⃣ Create a User Cart Entry (with auto-publish)
 const createUserCart = async ({ email, image, itemname, phonenumber, price }) => {
   const mutation = gql`
@@ -574,6 +601,7 @@ const createContactSubmission = async (name, email, message) => {
 export default {
   getCategory,
   getMenuItemsByCategory,
+  getAllMenuItems,
   createUserCart,
   getUserCart,
   deleteCartItem,

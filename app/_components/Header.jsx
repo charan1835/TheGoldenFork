@@ -26,8 +26,14 @@ export default function Header() {
 
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('siteTheme') : null
-    if (saved === 'dark') {
-      document.documentElement.classList.add('dark')
+    const root = document.documentElement
+    if (!saved) {
+      root.classList.add('dark')
+      localStorage.setItem('siteTheme', 'dark')
+    } else if (saved === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
     }
   }, [])
 
