@@ -93,6 +93,22 @@ export default function Header() {
           </div>
         </SignedOut>
 
+        {/* Mobile auth buttons */}
+        <SignedOut>
+          <div className="flex md:hidden gap-2">
+            <SignInButton mode="modal">
+              <button className="px-3 py-1.5 rounded-full border border-border/70 text-sm hover:bg-foreground/5">
+                Sign In
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-sm shadow-soft">
+                Sign Up
+              </button>
+            </SignUpButton>
+          </div>
+        </SignedOut>
+
         <SignedIn>
           <UserButton afterSignOutUrl="/" />
         </SignedIn>
