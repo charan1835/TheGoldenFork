@@ -2,15 +2,15 @@
 
 import React, { useEffect, useMemo, useRef } from "react";
 
-export default function InfiniteMenu({ items = [], onItemClick }) {
+export default function InfiniteMenu({ items = [], onItemClick, infinite = true }) {
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
   const startPosRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const gridRef = useRef(null);
 
-  // Create a large tiled grid for the illusion of infinity
+  // Create a large tiled grid for the illusion of infinity (or single set if not infinite)
   const tiled = useMemo(() => {
-    const times = 5; // tile 5x
+    const times = infinite ? 5 : 1;
     const tiles = [];
     for (let r = 0; r < times; r++) {
       for (let c = 0; c < times; c++) {
@@ -18,19 +18,25 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
       }
     }
     return { tiles, times };
-  }, [items]);
+  }, [items, infinite]);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    // center scroll
+    // center scroll only when infinite
     requestAnimationFrame(() => {
-      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-      el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+      if (infinite) {
+        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+        el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+      } else {
+        el.scrollLeft = 0;
+        el.scrollTop = 0;
+      }
     });
-  }, [tiled.tiles.length]);
+  }, [tiled.tiles.length, infinite]);
 
   const onMouseDown = (e) => {
+    if (!infinite) return;
     const el = containerRef.current;
     if (!el) return;
     isDraggingRef.current = true;
@@ -50,19 +56,23 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
   };
 
   const onMouseLeave = () => {
-    isDraggingRef.current = false;
-    containerRef.current?.classList.remove("dragging");
+    if (infinite) {
+      isDraggingRef.current = false;
+      containerRef.current?.classList.remove("dragging");
+    }
     const grid = gridRef.current;
-    if (grid) {
+    if (grid && infinite) {
       grid.classList.remove("converge");
     }
   };
 
   const onMouseUp = () => {
-    isDraggingRef.current = false;
-    containerRef.current?.classList.remove("dragging");
+    if (infinite) {
+      isDraggingRef.current = false;
+      containerRef.current?.classList.remove("dragging");
+    }
     const grid = gridRef.current;
-    if (grid) {
+    if (grid && infinite) {
       grid.classList.remove("converge");
       // trigger blast animation
       grid.classList.remove("blast");
@@ -74,6 +84,7 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
   };
 
   const onMouseMove = (e) => {
+    if (!infinite) return;
     const el = containerRef.current;
     if (!el || !isDraggingRef.current) return;
     e.preventDefault();
@@ -85,12 +96,14 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
     el.scrollTop = startPosRef.current.scrollTop - walkY;
 
     // reset to center if near edges to maintain illusion
-    const buffer = 200;
-    if (el.scrollLeft < buffer || el.scrollLeft > el.scrollWidth - el.clientWidth - buffer) {
-      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-    }
-    if (el.scrollTop < buffer || el.scrollTop > el.scrollHeight - el.clientHeight - buffer) {
-      el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+    if (infinite) {
+      const buffer = 200;
+      if (el.scrollLeft < buffer || el.scrollLeft > el.scrollWidth - el.clientWidth - buffer) {
+        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+      }
+      if (el.scrollTop < buffer || el.scrollTop > el.scrollHeight - el.clientHeight - buffer) {
+        el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+      }
     }
   };
 
@@ -99,12 +112,13 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
       <div
         id="infinite-grid-menu-canvas"
         ref={containerRef}
-        className="h-full w-full overflow-scroll rounded-2xl border border-border/60 bg-surface select-none"
+        className={`h-full w-full rounded-2xl border border-border/60 bg-surface select-none ${infinite ? 'overflow-scroll infinite' : 'overflow-auto'}`}
         onMouseDown={onMouseDown}
         onMouseLeave={onMouseLeave}
         onMouseUp={onMouseUp}
         onMouseMove={onMouseMove}
         onTouchStart={(e) => {
+          if (!infinite) return;
           const grid = gridRef.current;
           if (grid) {
             grid.classList.remove("blast");
@@ -112,6 +126,7 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
           }
         }}
         onTouchEnd={(e) => {
+          if (!infinite) return;
           const grid = gridRef.current;
           if (grid) {
             grid.classList.remove("converge");
@@ -123,13 +138,13 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
           }
         }}
       >
-        <div ref={gridRef} className="relative grid auto-rows-[220px] grid-cols-[repeat(10,220px)] gap-4 p-6">
+        <div ref={gridRef} className={`relative grid gap-4 p-6 ${infinite ? 'auto-rows-[220px] grid-cols-[repeat(10,220px)]' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 auto-rows-[260px]'}`}>
           {tiled.tiles.map((it) => (
             <button
               type="button"
               key={it.key}
               onClick={() => onItemClick?.(it)}
-              className="group relative h-[220px] w-[220px] overflow-hidden rounded-2xl border border-border/60 bg-surface shadow-soft transition active:scale-[0.98]"
+              className={`group relative overflow-hidden rounded-2xl border border-border/60 bg-surface shadow-soft transition active:scale-[0.98] ${infinite ? 'h-[220px] w-[220px]' : 'h-full w-full'}`}
             >
               {it.image ? (
                 <img src={it.image} alt={it.title || "menu"} className="absolute inset-0 h-full w-full object-cover" />
@@ -150,16 +165,16 @@ export default function InfiniteMenu({ items = [], onItemClick }) {
         </div>
       </div>
       <style jsx>{`
-        #infinite-grid-menu-canvas { cursor: grab; scrollbar-width: none; -ms-overflow-style: none; }
-        #infinite-grid-menu-canvas::-webkit-scrollbar { display: none; }
-        #infinite-grid-menu-canvas.dragging { cursor: grabbing; }
+        #infinite-grid-menu-canvas.infinite { cursor: grab; scrollbar-width: none; -ms-overflow-style: none; }
+        #infinite-grid-menu-canvas.infinite::-webkit-scrollbar { display: none; }
+        #infinite-grid-menu-canvas.infinite.dragging { cursor: grabbing; }
         /* Converge to center while pressed */
-        .converge {
+        .infinite .converge {
           animation: convergeToCenter 250ms ease forwards;
           transform-origin: center center;
         }
         /* Blast out with a bounce after release */
-        .blast {
+        .infinite .blast {
           animation: blastOut 550ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           transform-origin: center center;
         }

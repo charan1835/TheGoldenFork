@@ -63,20 +63,53 @@ function CategoryList() {
         </div>
       )}
 
-      {/* Flowing menu for categories */}
-      <FlowingMenu items={flowingItems} />
+      {/* Mobile: 3-up grid with full visible images */}
+      <ul className="grid grid-cols-2 gap-4 px-2 sm:hidden">
+        {categoryList.map((c, idx) => (
+          <li key={idx}>
+            <button
+              onClick={() => router.push(`?category=${c.slug}`)}
+              className="relative block h-40 w-full overflow-hidden rounded-xl border border-border/60 bg-surface shadow-soft"
+            >
+              {c.icon?.url ? (
+                <img src={c.icon.url} alt={c.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+              ) : (
+                <div className="absolute inset-0 grid place-items-center text-muted-foreground text-xs">{c.name}</div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+              <div className="absolute bottom-1 left-1 right-1 flex justify-center">
+                <span className="inline-flex items-center rounded-full border border-white/20 bg-black/40 px-3 py-0.5 text-xs font-semibold text-white backdrop-blur">
+                  {c.name}
+                </span>
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
 
-      {/* Scroll Arrows */}
-      <ArrowLeftCircle
-        className="absolute left-1 top-1/2 -translate-y-1/2 text-gray-700 cursor-pointer z-10 opacity-70 hover:opacity-100 transition-opacity hidden sm:block"
-        size={35}
-        onClick={() => handleScroll("left")}
-      />
-      <ArrowRightCircle
-        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-700 cursor-pointer z-10 opacity-70 hover:opacity-100 transition-opacity hidden sm:block"
-        size={35}
-        onClick={() => handleScroll("right")}
-      />
+      {/* Tablet/Desktop: responsive grid with larger images */}
+      <ul className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+        {categoryList.map((c, idx) => (
+          <li key={idx}>
+            <button
+              onClick={() => router.push(`?category=${c.slug}`)}
+              className="relative block h-48 md:h-56 lg:h-64 w-full overflow-hidden rounded-2xl border border-border/60 bg-surface shadow-soft"
+            >
+              {c.icon?.url ? (
+                <img src={c.icon.url} alt={c.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+              ) : (
+                <div className="absolute inset-0 grid place-items-center text-muted-foreground">{c.name}</div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2 flex justify-center">
+                <span className="inline-flex items-center rounded-full border border-white/20 bg-black/40 px-3 py-1 text-sm font-semibold text-white backdrop-blur">
+                  {c.name}
+                </span>
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

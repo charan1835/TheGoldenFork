@@ -99,7 +99,7 @@ export default function Header() {
 
         <div className="md:hidden">
           <BubbleMenu
-            logo={<span style={{ fontWeight: 700 }}>RB</span>}
+            logo={<span style={{ fontWeight: 700 }}>≡</span>}
             items={[
               { label: 'home', href: '/', ariaLabel: 'Home', rotation: -8, hoverStyles: { bgColor: '#3b82f6', textColor: '#ffffff' } },
               { label: 'about', href: '/about', ariaLabel: 'About', rotation: 8, hoverStyles: { bgColor: '#10b981', textColor: '#ffffff' } },

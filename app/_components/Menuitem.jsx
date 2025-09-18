@@ -114,7 +114,7 @@ function MenuItems() {
           <span className="ml-3 text-gray-600">Loading menu items...</span>
         </div>
       ) : menuItems.length > 0 ? (
-        <InfiniteMenu items={flowingItems} onItemClick={handlePick} />
+        <InfiniteMenu items={flowingItems} onItemClick={handlePick} infinite={!selectedCategory} />
       ) : (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
