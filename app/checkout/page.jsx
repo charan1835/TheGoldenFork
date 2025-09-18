@@ -184,7 +184,7 @@ export default function CheckoutPage() {
       setCartItems([]);
       await fetchCartCount();
   
-      toast.success("Order placed successfully! Redirecting to WhatsApp...");
+      toast.success("Order placed successfully!");
   
       // Step 4: WhatsApp Summary
       const {
@@ -225,17 +225,8 @@ export default function CheckoutPage() {
         `📍 *App:* foodieeee\n\n` +
         `📍 *Please share your live location for smoother delivery.*`;
   
-      const whatsappLink = `https://wa.me/918688605760?text=${encodeURIComponent(message)}`;
-  
-      // Step 5: Redirect based on device
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  
-      if (isMobile) {
-        window.location.href = whatsappLink;
-      } else {
-        window.open(whatsappLink, "_blank");
-        router.push("/order-confirmation");
-      }
+      // Step 5: Stay on site → go to confirmation page only
+      router.push("/order-confirmation");
   
     } catch (error) {
       console.error("Error placing order:", error);

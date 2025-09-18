@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import GlobalApi from "../_utils/GlobalApi";
+import GlareCard from "./animations/GlareCard";
+import FlowingMenu from "./FlowingMenu";
 import { ArrowRightCircle, ArrowLeftCircle, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -34,8 +36,14 @@ function CategoryList() {
     router.push("/");
   };
 
+  const flowingItems = categoryList.map((c) => ({
+    link: `?category=${c.slug}`,
+    text: c.name,
+    image: c.icon?.url,
+  }));
+
   return (
-    <div className="relative px-4 py-4 sm:px-6 md:px-8">
+    <div className="relative px-4 py-4 sm:px-6 md:px-8" id="home">
       {/* Clear Selection Button - Show only when category is selected */}
       {selectedCategory && (
         <div className="mb-4 flex items-center justify-between">
@@ -55,41 +63,8 @@ function CategoryList() {
         </div>
       )}
 
-      <div
-        ref={scrollRef}
-        className="overflow-x-auto whitespace-nowrap scroll-smooth no-scrollbar"
-      >
-        <div className="flex gap-3 sm:gap-4 md:gap-5 py-2">
-          {categoryList.map((category, index) => {
-            const isSelected = selectedCategory === category.slug;
-            return (
-              <Link
-                href={`?category=${category.slug}`}
-                key={index}
-                className={`min-w-[100px] sm:min-w-[120px] md:min-w-[140px] flex-shrink-0 flex flex-col items-center gap-2 border rounded-xl p-3 shadow-md transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg cursor-pointer
-                  ${
-                    isSelected
-                      ? "bg-orange-600 text-white border-orange-600"
-                      : "bg-white text-gray-800 border-gray-200 hover:border-gray-300"
-                  }`}
-              >
-                {category.icon?.url && (
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full overflow-hidden shadow-sm bg-gray-100">
-                    <img
-                      src={category.icon.url}
-                      alt={category.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <span className="text-xs sm:text-sm font-medium text-center truncate w-full">
-                  {category.name}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+      {/* Flowing menu for categories */}
+      <FlowingMenu items={flowingItems} />
 
       {/* Scroll Arrows */}
       <ArrowLeftCircle

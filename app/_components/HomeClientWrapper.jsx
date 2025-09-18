@@ -4,10 +4,12 @@
 import { Suspense } from "react";
 import CategoryList from "./CategoryList";
 import MenuItems from "./Menuitem";
+import Hero from "./Hero";
 
 export default function HomeClientWrapper() {
   return (
     <>
+      <Hero />
       <Suspense fallback={<div>Loading Categories...</div>}>
         <CategoryList />
       </Suspense>

@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import GlobalApi from "../_utils/GlobalApi";
 import { useCart } from "../context/CartContext";
 import { ShoppingCart, Star, Loader2, IndianRupee } from "lucide-react";
+import GlareCard from "./animations/GlareCard";
 
 function MenuItems() {
   const [menuItems, setMenuItems] = useState([]);
@@ -87,10 +88,7 @@ function MenuItems() {
       ) : menuItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {menuItems.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg cursor-pointer"
-            >
+            <GlareCard key={index} className="overflow-hidden cursor-pointer">
               <div className="h-48 bg-gradient-to-br from-orange-100 to-red-100 relative overflow-hidden">
                 {item.img?.url ? (
                   <img
@@ -140,14 +138,14 @@ function MenuItems() {
 
                   <button
                     onClick={() => handleAddToCart(item)}
-                    className="bg-orange-600 text-white px-3 py-1.5 rounded-lg hover:bg-orange-700 transition-colors duration-200 text-sm font-medium flex items-center gap-1"
+                    className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 transition-colors duration-200 text-sm font-medium flex items-center gap-1"
                   >
                     <ShoppingCart className="w-3 h-3" />
                     Add
                   </button>
                 </div>
               </div>
-            </div>
+            </GlareCard>
           ))}
         </div>
       ) : (
