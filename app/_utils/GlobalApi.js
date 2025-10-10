@@ -598,7 +598,7 @@ const createContactSubmission = async (name, email, message) => {
 };
 
 // Add to your export default object:
-export default {
+const GlobalApi = {
   getCategory,
   getMenuItemsByCategory,
   getAllMenuItems,
@@ -612,5 +612,7 @@ export default {
   getAllOrders,
   createContactSubmission,
 };
+
+export default GlobalApi;
 
 

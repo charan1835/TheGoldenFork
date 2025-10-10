@@ -47,19 +47,6 @@ export default function CheckoutPage() {
   // Form validation state
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (user?.primaryEmailAddress?.emailAddress) {
-      fetchCartItems();
-      // Pre-fill name from user data
-      setAddressForm(prev => ({
-        ...prev,
-        fullName: user.fullName || user.firstName || ""
-      }));
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
   const fetchCartItems = async () => {
     try {
       setLoading(true);
@@ -73,15 +60,41 @@ export default function CheckoutPage() {
     }
   };
 
+  useEffect(() => {
+    if (user?.primaryEmailAddress?.emailAddress) {
+      fetchCartItems();
+      // Pre-fill name from user data
+      setAddressForm(prev => ({
+        ...prev,
+        fullName: user.fullName || user.firstName || ""
+      }));
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
+ 
+  // Load Razorpay checkout script once on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+      // script.onload = () => {
+      //   window.Razorpay = window.Razorpay || {};
+      // };
+    }
+  }, []);
+  
   const calculateSubtotal = () => {
     return cartItems.reduce((total, item) => total + (item.price || 0), 0);
   };
-
+  
   const calculateDeliveryFee = () => {
     const subtotal = calculateSubtotal();
     return subtotal > 500 ? 0 : 50;
   };
-
+  
   const calculateGST = () => {
     const subtotal = calculateSubtotal();
     return subtotal * 0.18;
@@ -90,7 +103,7 @@ export default function CheckoutPage() {
   const calculateTotal = () => {
     return calculateSubtotal() + calculateDeliveryFee() + calculateGST();
   };
-
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setAddressForm(prev => ({
@@ -127,114 +140,134 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
   const handlePlaceOrder = async () => {
+    // First, always validate the address form
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
       return;
     }
-  
+
+    setPlacing(true);
+
+    // If payment is via Razorpay, initiate payment flow
+    if (selectedPayment === "Rezor pay") {
+      const totalAmount = calculateTotal();
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Your Razorpay Key ID
+        amount: Math.round(totalAmount * 100), // Amount in the smallest currency unit (paise)
+        currency: "INR",
+        name: "Hotel Madiina",
+        description: "Food Order Payment",
+        image: "/logo.png", // URL of your logo
+        handler: async function (response) {
+          // This function is called after successful payment
+          console.log("Razorpay payment successful:", response);
+          
+          // Now, save the order to the database
+          try {
+            await saveOrderToDB("Rezor pay", response.razorpay_payment_id);
+            toast.success("Payment successful! Order placed.");
+            router.push("/order-confirmation");
+          } catch (error) {
+            console.error("Error saving order after payment:", error);
+            toast.error("Payment was successful, but failed to save your order. Please contact support.");
+          } finally {
+            setPlacing(false);
+          }
+        },
+        prefill: {
+          name: addressForm.fullName,
+          email: user.primaryEmailAddress.emailAddress,
+          contact: addressForm.phone,
+        },
+        theme: {
+          color: "#F59E0B", // Orange color to match your theme
+        },
+        modal: {
+          ondismiss: function () {
+            // This function is called when user closes the modal
+            console.log("Razorpay modal closed.");
+            toast.error("Payment was cancelled.");
+            setPlacing(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } else { // Handle Cash on Delivery (COD)
+      try {
+        await saveOrderToDB("cod");
+        toast.success("Order placed successfully!");
+        router.push("/order-confirmation");
+      } catch (error) {
+        console.error("Error placing COD order:", error);
+        toast.error("Failed to place order. Please try again.");
+      } finally {
+        setPlacing(false);
+      }
+    }
+  };
+
+  // Helper function to save order and clean up
+  const saveOrderToDB = async (paymentMethod, paymentId = null) => {
     try {
-      setPlacing(true);
-  
       const orderData = {
         userEmail: user.primaryEmailAddress.emailAddress,
         items: cartItems,
         deliveryAddress: addressForm.address,
         addressType: addressForm.addressType || "home",
         landmark: addressForm.landmark,
-        paymentMethod: selectedPayment,
+        paymentMethod: paymentMethod,
+        paymentId: paymentId,
         subtotal: calculateSubtotal(),
         deliveryFee: calculateDeliveryFee(),
         gst: calculateGST(),
         total: calculateTotal(),
         orderDate: new Date().toISOString(),
         itemCount: cartItems.length,
-        appliedCoupon: null,
-        couponDiscount: 0,
       };
-  
-      // Step 1: SAVE ORDER TO DATABASE
+
       console.log("💾 Saving order to database...");
       const savedOrder = await GlobalApi.createOrder({
         username: user?.fullName || "Guest",
         useremail: user.primaryEmailAddress.emailAddress,
         total: orderData.total,
         subtotal: orderData.subtotal,
-        orderdate: orderData.orderDate,
-        paymentmode: orderData.paymentMethod,
+        orderdate: orderData.orderDate, // Corrected from orderDate
+        paymentmode: orderData.paymentMethod, // Corrected from paymentMethod
         items: cartItems.map(item => ({
           id: item.id,
           email: item.email,
           image: item.image,
           itemname: item.itemname,
           price: item.price
-        })), // Direct JSON object, not string
+        })),
         gst: orderData.gst,
         deliveryfee: orderData.deliveryFee,
         address: `${orderData.deliveryAddress}${orderData.landmark ? ', ' + orderData.landmark : ''}`,
-        statue: "pending"
+        statue: "pending",
+        paymentId: orderData.paymentId,
       });
-  
+
       console.log("✅ Order saved successfully:", savedOrder);
-  
-      // Step 2: Clear backend cart
+
       console.log("🧹 Clearing cart after successful order save...");
       await GlobalApi.clearUserCart(user.primaryEmailAddress.emailAddress);
-  
-      // Step 3: Local state cleanup
+
       setCartItems([]);
       await fetchCartCount();
-  
-      toast.success("Order placed successfully!");
-  
-      // Step 4: WhatsApp Summary
-      const {
-        itemCount,
-        subtotal,
-        deliveryFee,
-        gst,
-        total,
-        appliedCoupon,
-        couponDiscount,
-        items,
-        deliveryAddress,
-        addressType,
-        landmark,
-      } = orderData;
-  
-      const itemLines =
-        items?.map((item) => `• ${item.itemname} — ₹${item.price}`).join("%0A") ||
-        "No items listed";
-  
-      const message =
-        `*🛒 COD Order Summary*\n\n` +
-        `👤 *Customer:* ${user?.fullName || "Guest"}\n` +
-        `📧 *Email:* ${user?.primaryEmailAddress?.emailAddress || "Not Provided"}\n` +
-        `📱 *Phone:* ${addressForm.phone || user?.phoneNumbers?.[0]?.phoneNumber || "Not Provided"}\n` +
-        `📦 *Total Items:* ${itemCount}\n\n` +  
-        `*🧾 Order Details:*\n${itemLines}\n\n` +
-        `💵 *Subtotal:* ₹${subtotal.toFixed(2)}\n` +
-        `🚚 *Delivery Fee:* ₹${deliveryFee.toFixed(2)}\n` +
-        `🏷️ *GST:* ₹${gst.toFixed(2)}\n` +
-        (appliedCoupon ? `🏷️ *Coupon Discount:* -₹${couponDiscount.toFixed(2)}\n` : "") +
-        `\n🔐 *Total Payable:* ₹${total.toFixed(2)}\n\n` +
-        `✅ *Payment Mode:* Cash on Delivery\n` +
-        `🕐 *ETA:* 25–30 mins\n\n` +
-        `📍 *Address Type:* ${addressType.charAt(0).toUpperCase() + addressType.slice(1)}\n` +
-        `📍 *Address:* ${deliveryAddress}\n` +
-        (landmark ? `🏷️ *Landmark:* ${landmark}\n` : "") +
-        `📍 *App:* foodieeee\n\n` +
-        `📍 *Please share your live location for smoother delivery.*`;
-  
-      // Step 5: Stay on site → go to confirmation page only
-      router.push("/order-confirmation");
-  
+
+      // You can still send a WhatsApp summary if needed
+      // sendWhatsAppSummary(orderData);
+
     } catch (error) {
-      console.error("Error placing order:", error);
-      toast.error("Failed to place order. Please try again.");
-    } finally {
-      setPlacing(false);
+      // Re-throw the error to be caught by the caller
+      throw error;
     }
   };
+
 
   const paymentMethods = [
     {
@@ -259,11 +292,11 @@ export default function CheckoutPage() {
       available: false
     },
     {
-      id: "wallet",
-      name: "Digital Wallet",
+      id: "Rezor pay",
+      name: "Rezor pay",
       icon: Wallet,
-      description: "PayPal, Amazon Pay",
-      available: false
+      description: "Rezor pay",
+      available: true
     }
   ];
 
@@ -322,22 +355,6 @@ export default function CheckoutPage() {
       </div>
     );
   }
-  const createUserOrder = async (orderData) => {
-    const res = await request(MASTER_URL, CREATE_ORDER_MUTATION, orderData, requestHeaders);
-    const orderId = res?.createUserOrder?.id;
-  
-    if (orderId) {
-      await request(MASTER_URL, gql`
-        mutation PublishOrder($id: ID!) {
-          publishUserOrder(where: { id: $id }, to: PUBLISHED) {
-            id
-          }
-        }
-      `, { id: orderId }, requestHeaders);
-    }
-  
-    return res;
-  };
   
   return (
     <div className="min-h-screen bg-gray-50">
