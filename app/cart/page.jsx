@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { 
@@ -14,7 +14,6 @@ import {
   ShoppingBag,
   Trash2,
   Tag,
-  Percent,
   CheckCircle,
   AlertCircle
 } from "lucide-react";
@@ -27,9 +26,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [couponLoading, setCouponLoading] = useState(false);
   const { user } = useUser();
   const { cartCount, fetchCartCount } = useCart();
   const router = useRouter();
@@ -66,9 +63,11 @@ export default function CartPage() {
     if (user?.primaryEmailAddress?.emailAddress) {
       fetchCartItems();
     } else {
-      setLoading(false);
+      // If there's no user, ensure the cart is empty and stop loading.
+      setCartItems([]);
+      setLoading(false); 
     }
-  }, [user]);
+  }, [user, cartCount]);
 
   const fetchCartItems = async () => {
     try {
@@ -87,112 +86,91 @@ export default function CartPage() {
     try {
       setDeletingId(id);
       await GlobalApi.deleteCartItem(id);
-      toast.success("Item removed from cart");
-      fetchCartItems();
-      fetchCartCount();
+      toast.success("Item removed from cart");      
+      // Optimistically update the UI for a faster user experience
+      setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+      // Update the global cart count, which syncs other components
+      fetchCartCount(); 
     } catch (error) {
       console.error("Error deleting cart item:", error);
       toast.error("Failed to remove item");
+      fetchCartItems(); // Re-fetch on error to ensure data consistency
     } finally {
       setDeletingId(null);
     }
   };
 
-  const calculateSubtotal = () => {
+  const subtotal = useMemo(() => {
     return cartItems.reduce((total, item) => total + (item.price || 0), 0);
-  };
+  }, [cartItems]);
 
-  const calculateGST = (subtotal) => {
-    // Standard GST rate of 18% for food items
-    const gstRate = 0.18;
-    return Math.round(subtotal * gstRate);
-  };
+  const gst = useMemo(() => {
+    return Math.round(subtotal * 0.18);
+  }, [subtotal]);
 
-  const calculateDeliveryFee = () => {
-    const subtotal = calculateSubtotal();
+  const deliveryFee = useMemo(() => {
     return subtotal > 500 ? 0 : 50;
-  };
+  }, [subtotal]);
 
-  const calculateDiscount = () => {
+  const discount = useMemo(() => {
     if (!appliedCoupon) return 0;
-
-    const subtotal = calculateSubtotal();
     let discount = 0;
 
     if (appliedCoupon.type === "percentage") {
       discount = Math.round((subtotal * appliedCoupon.value) / 100);
-      // Apply max discount limit
       if (appliedCoupon.maxDiscount && discount > appliedCoupon.maxDiscount) {
         discount = appliedCoupon.maxDiscount;
       }
     } else if (appliedCoupon.type === "fixed") {
       discount = appliedCoupon.value;
     }
-
     return discount;
-  };
+  }, [appliedCoupon, subtotal]);
 
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const gst = calculateGST(subtotal);
-    const deliveryFee = calculateDeliveryFee();
-    const discount = calculateDiscount();
-    
+  const total = useMemo(() => {
     return subtotal + gst + deliveryFee - discount;
-  };
+  }, [subtotal, gst, deliveryFee, discount]);
 
-  const applyCoupon = async () => {
-    if (!couponCode.trim()) {
-      toast.error("Please enter a coupon code");
+  const handleCouponSelect = (couponCode) => {
+    if (!couponCode) {
+      removeCoupon();
       return;
     }
 
-    setCouponLoading(true);
-    
-    try {
-      const coupon = availableCoupons.find(
-        c => c.code.toLowerCase() === couponCode.trim().toLowerCase()
-      );
-
-      if (!coupon) {
-        toast.error("Invalid coupon code");
-        setCouponLoading(false);
-        return;
-      }
-
-      const subtotal = calculateSubtotal();
-      
-      if (subtotal < coupon.minAmount) {
-        toast.error(`Minimum order amount ₹${coupon.minAmount} required for this coupon`);
-        setCouponLoading(false);
-        return;
-      }
-
+    const coupon = availableCoupons.find(c => c.code === couponCode);
+    if (coupon && subtotal >= coupon.minAmount) {
       setAppliedCoupon(coupon);
-      setCouponCode("");
-      toast.success(`Coupon applied! You saved ₹${calculateDiscount()}`);
-      
-    } catch (error) {
-      console.error("Error applying coupon:", error);
-      toast.error("Failed to apply coupon");
-    } finally {
-      setCouponLoading(false);
+      toast.success(`Coupon ${coupon.code} applied!`);
     }
   };
 
   const removeCoupon = () => {
     setAppliedCoupon(null);
-    setCouponCode("");
     toast.success("Coupon removed");
   };
+
+  const handleProceedToCheckout = () => {
+    const checkoutData = {
+      subtotal: subtotal,
+      gst: gst,
+      deliveryFee: deliveryFee,
+      discount: discount,
+      total: total,
+      couponCode: appliedCoupon ? appliedCoupon.code : 'none',
+    };
+
+    const queryString = new URLSearchParams(checkoutData).toString();
+    router.push(`/checkout?${queryString}`);
+  };
+
 
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-center items-center min-h-[400px]">
-            <Loader2 className="w-12 h-12 animate-spin text-orange-600" />
+            <Loader2 className="w-16 h-16 animate-spin text-orange-500" />
           </div>
         </div>
       </div>
@@ -202,16 +180,16 @@ export default function CartPage() {
   // Not logged in state
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-16">
-            <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
-              <ShoppingCart className="w-20 h-20 mx-auto text-gray-400 mb-6" />
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Sign In Required</h2>
-              <p className="text-gray-600 mb-8">Please sign in to view your cart and continue shopping</p>
+            <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-md mx-auto">
+              <ShoppingCart className="w-20 h-20 mx-auto text-slate-300 mb-6" />
+              <h2 className="text-2xl font-bold text-slate-800 mb-4">Sign In Required</h2>
+              <p className="text-slate-500 mb-8">Please sign in to view your cart and continue shopping</p>
               <button
                 onClick={() => router.push("/sign-in")}
-                className="w-full bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                className="w-full bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors font-semibold"
               >
                 Sign In
               </button>
@@ -223,23 +201,23 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6 sm:mb-8">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-3">
+              <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500" />
               Your Cart
             </h1>
-            <p className="text-gray-600 mt-1">
-              {cartCount} {cartCount === 1 ? "item" : "items"}
+            <p className="text-slate-500 mt-1">
+              {cartItems.length} {cartItems.length === 1 ? "item" : "items"}
             </p>
           </div>
         </div>
@@ -247,13 +225,13 @@ export default function CartPage() {
         {/* Empty Cart State */}
         {cartItems.length === 0 ? (
           <div className="text-center py-16">
-            <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
-              <ShoppingCart className="w-20 h-20 mx-auto text-gray-400 mb-6" />
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Cart is Empty</h2>
-              <p className="text-gray-600 mb-8">Add some delicious items to get started</p>
+            <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-md mx-auto">
+              <ShoppingCart className="w-20 h-20 mx-auto text-slate-300 mb-6" />
+              <h2 className="text-2xl font-bold text-slate-800 mb-4">Your Cart is Empty</h2>
+              <p className="text-slate-500 mb-8">Add some delicious items to get started</p>
               <button
                 onClick={() => router.push("/")}
-                className="w-full bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                className="w-full bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors font-semibold"
               >
                 Browse Menu
               </button>
@@ -263,13 +241,13 @@ export default function CartPage() {
           <div className="lg:grid lg:grid-cols-3 lg:gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-6 lg:mb-0">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Order Items</h2>
-                <div className="space-y-4">
+              <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 mb-6 lg:mb-0">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4 px-2">Order Items</h2>
+                <div className="divide-y divide-slate-100">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-start gap-4 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow">
+                    <div key={item.id} className="flex items-start gap-4 p-4 rounded-lg hover:bg-slate-50/50 transition-colors">
                       {/* Item Image */}
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
                         {item.image ? (
                           <img
                             src={item.image}
@@ -277,7 +255,7 @@ export default function CartPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                          <div className="w-full h-full flex items-center justify-center bg-slate-200">
                             <ShoppingBag className="w-6 h-6 text-gray-400" />
                           </div>
                         )}
@@ -287,10 +265,10 @@ export default function CartPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
                           <div>
-                            <h3 className="font-semibold text-gray-800 text-sm sm:text-base truncate">
+                            <h3 className="font-semibold text-slate-800 text-sm sm:text-base truncate">
                               {item.itemname}
                             </h3>
-                            <div className="flex items-center mt-1 text-orange-600 font-medium">
+                            <div className="flex items-center mt-1 text-orange-500 font-medium">
                               <IndianRupee className="w-4 h-4" />
                               <span className="text-lg">{item.price}</span>
                             </div>
@@ -300,7 +278,7 @@ export default function CartPage() {
                           <button
                             onClick={() => deleteCartItem(item.id)}
                             disabled={deletingId === item.id}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex-shrink-0"
                           >
                             {deletingId === item.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -318,94 +296,88 @@ export default function CartPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 sticky top-4">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h2>
+              <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 sticky top-4">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">Order Summary</h2>
                 
                 {/* Coupon Section */}
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-orange-600 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-orange-500 mb-3 flex items-center gap-2">
                     <Tag className="w-4 h-4" />
                     Have a Coupon?
                   </h3>
-                  
-                  {appliedCoupon ? (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <div>
-                          <p className="text-sm font-medium text-green-800">{appliedCoupon.code}</p>
-                          <p className="text-xs text-green-600">You saved ₹{calculateDiscount()}</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={removeCoupon}
-                        className="text-red-600 hover:text-red-700 p-1"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
+                  <div className="space-y-3">
+                    {/* No Coupon Option */}
+                    <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 has-[:checked]:bg-slate-100 has-[:checked]:border-slate-400">
                       <input
-                        type="text"
-                        placeholder="Enter coupon code"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-orange-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        onKeyPress={(e) => e.key === 'Enter' && applyCoupon()}
+                        type="radio"
+                        name="coupon"
+                        value=""
+                        checked={!appliedCoupon}
+                        onChange={() => handleCouponSelect(null)}
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500"
                       />
-                      <button
-                        onClick={applyCoupon}
-                        disabled={couponLoading}
-                        className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
-                      >
-                        {couponLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "Apply"
-                        )}
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* Available Coupons */}
-                  <div className="mt-3 space-y-2">
-                    <p className="text-xs text-orange-600">Available Coupons:</p>
-                    {availableCoupons.map((coupon) => (
-                      <div key={coupon.code} className="text-xs text-orange-600 bg-gray-50 p-2 rounded border-l-2 text-orange-600 border-orange-200">
-                        <span className="font-medium">{coupon.code}</span> - {coupon.description}
-                      </div>
-                    ))}
+                      <span className="font-medium text-sm text-slate-700">None</span>
+                    </label>
+
+                    {/* Available Coupons */}
+                    {availableCoupons.map((coupon) => {
+                      const isApplicable = subtotal >= coupon.minAmount;
+                      return (
+                        <label
+                          key={coupon.code}
+                          className={`flex items-center gap-3 p-3 border rounded-lg transition-colors ${
+                            isApplicable
+                              ? "cursor-pointer hover:bg-orange-50 has-[:checked]:bg-orange-50 has-[:checked]:border-orange-500"
+                              : "cursor-not-allowed bg-slate-50 opacity-60"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="coupon"
+                            value={coupon.code}
+                            checked={appliedCoupon?.code === coupon.code}
+                            onChange={() => handleCouponSelect(coupon.code)}
+                            disabled={!isApplicable}
+                            className="h-4 w-4 text-orange-600 focus:ring-orange-500 disabled:text-slate-300"
+                          />
+                          <div>
+                            <span className="font-semibold tracking-wider text-sm text-orange-800">{coupon.code}</span>
+                            <p className="text-xs text-slate-600">{coupon.description}</p>
+                            {!isApplicable && <p className="text-xs text-red-500 mt-1">Requires min. order of ₹{coupon.minAmount}</p>}
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="space-y-3 mb-6">
+                <div className="space-y-3 my-6 pt-4 border-t border-slate-200">
                   <div className="flex justify-between items-center">
-                    <span className="text-orange-600">Subtotal</span>
-                    <div className="flex items-center font-medium text-orange-600">
+                    <span className="text-slate-600">Subtotal</span>
+                    <div className="flex items-center font-medium text-slate-800">
                       <IndianRupee className="w-4 h-4" />
-                      <span>{calculateSubtotal()}</span>
+                      <span>{subtotal}</span>
                     </div>
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-orange-600">GST (18%)</span>
-                    <div className="flex items-center font-medium text-orange-600">
+                    <span className="text-slate-600">GST (18%)</span>
+                    <div className="flex items-center font-medium text-slate-800">
                       <IndianRupee className="w-4 h-4" />
-                      <span>{calculateGST(calculateSubtotal())}</span>
+                      <span>{gst}</span>
                     </div>
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-orange-600">Delivery Fee</span>
-                    <div className="flex items-center font-medium text-orange-600 ">
-                      {calculateDeliveryFee() === 0 ? (
+                    <span className="text-slate-600">Delivery Fee</span>
+                    <div className="flex items-center font-medium text-slate-800 ">
+                      {deliveryFee === 0 ? (
                         <span className="text-green-600 font-semibold">FREE</span>
                       ) : (
                         <>
                           <IndianRupee className="w-4 h-4" />
-                          <span>{calculateDeliveryFee()}</span>
+                          <span>{deliveryFee}</span>
                         </>
                       )}
                     </div>
@@ -413,42 +385,43 @@ export default function CartPage() {
                   
                   {appliedCoupon && (
                     <div className="flex justify-between items-center">
-                      <span className="text-orange-600">Discount</span>
+                      <span className="text-slate-600">Discount</span>
                       <div className="flex items-center font-medium text-green-600">
                         <span>-</span>
                         <IndianRupee className="w-4 h-4" />
-                        <span>{calculateDiscount()}</span>
+                        <span>{discount}</span>
                       </div>
                     </div>
                   )}
                   
-                  {calculateSubtotal() > 0 && calculateSubtotal() <= 500 && (
-                    <div className="text-sm text-orange-600 bg-gray-50 p-3 rounded-lg">
-                      Add ₹{500 - calculateSubtotal()} more for free delivery
+                  {subtotal > 0 && subtotal <= 500 && (
+                    <div className="text-sm text-orange-700 bg-orange-50 p-3 rounded-lg text-center">
+                      Add ₹{500 - subtotal} more for free delivery
                     </div>
                   )}
                   
-                  <div className="border-t pt-3">
+                  <div className="border-t border-slate-200 pt-4 mt-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-orange-600">Total</span>
-                      <div className="flex items-center text-xl font-bold text-orange-600">
+                      <span className="text-lg font-semibold text-slate-800">Total</span>
+                      <div className="flex items-center text-xl font-bold text-orange-500">
                         <IndianRupee className="w-5 h-5" />
-                        <span>{calculateTotal()}</span>
+                        <span>{total}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <button
-                  onClick={() => router.push("/checkout")}
-                  className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors shadow-lg hover:shadow-xl"
+                  onClick={handleProceedToCheckout}
+                  disabled={total === 0}
+                  className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   Proceed to Checkout
                 </button>
                 
                 <button
                   onClick={() => router.push("/")}
-                  className="w-full mt-3 bg-orange-100 text-orange-600 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  className="w-full mt-3 bg-slate-100 text-slate-600 py-3 rounded-lg font-medium hover:bg-slate-200 transition-colors"
                 >
                   Continue Shopping
                 </button>
