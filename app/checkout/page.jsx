@@ -165,9 +165,16 @@ export default function CheckoutPage() {
           
           // Now, save the order to the database
           try {
-            await saveOrderToDB("razorpay", response.razorpay_payment_id);
+            const savedOrder = await saveOrderToDB("razorpay", response.razorpay_payment_id);
             toast.success("Payment successful! Order placed.");
-            router.push("/order-confirmation");
+            // Pass order details to the confirmation page
+            const query = new URLSearchParams({
+              paymentMethod: "razorpay",
+              address: addressForm.address,
+              orderId: savedOrder.id,
+              total: savedOrder.total,
+            }).toString();
+            router.push(`/order-confirmation?${query}`);
           } catch (error) {
             console.error("Error saving order after payment:", error);
             toast.error("Payment was successful, but failed to save your order. Please contact support.");
@@ -198,9 +205,16 @@ export default function CheckoutPage() {
 
     } else { // Handle Cash on Delivery (COD)
       try {
-        await saveOrderToDB("cod");
+        const savedOrder = await saveOrderToDB("cod");
         toast.success("Order placed successfully!");
-        router.push("/order-confirmation");
+        // Pass order details to the confirmation page
+        const query = new URLSearchParams({
+          paymentMethod: "cod",
+          address: addressForm.address,
+          orderId: savedOrder.id,
+          total: savedOrder.total,
+        }).toString();
+        router.push(`/order-confirmation?${query}`);
       } catch (error) {
         console.error("Error placing COD order:", error);
         toast.error("Failed to place order. Please try again.");
@@ -262,6 +276,8 @@ export default function CheckoutPage() {
       // You can still send a WhatsApp summary if needed
       // sendWhatsAppSummary(orderData);
 
+      // Return the saved order to use its ID and total
+      return savedOrder;
     } catch (error) {
       // Re-throw the error to be caught by the caller
       throw error;
