@@ -292,10 +292,10 @@ export default function CheckoutPage() {
       available: false
     },
     {
-      id: "Rezor pay",
-      name: "Rezor pay",
+      id: "razorpay",
+      name: "Razorpay",
       icon: Wallet,
-      description: "Rezor pay",
+      description: "Razorpay",
       available: true
     }
   ];
