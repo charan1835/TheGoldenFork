@@ -149,7 +149,7 @@ export default function CheckoutPage() {
     setPlacing(true);
 
     // If payment is via Razorpay, initiate payment flow
-    if (selectedPayment === "Rezor pay") {
+    if (selectedPayment === "razorpay") {
       const totalAmount = calculateTotal();
 
       const options = {
@@ -165,7 +165,7 @@ export default function CheckoutPage() {
           
           // Now, save the order to the database
           try {
-            await saveOrderToDB("Rezor pay", response.razorpay_payment_id);
+            await saveOrderToDB("razorpay", response.razorpay_payment_id);
             toast.success("Payment successful! Order placed.");
             router.push("/order-confirmation");
           } catch (error) {
