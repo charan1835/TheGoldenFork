@@ -65,3 +65,16 @@
     scroll-behavior: auto !important;
   }
 }
+/* Ensures scroll is smooth on mobile too */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbars for all browsers (extra insurance) */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none; /* Firefox */
+}

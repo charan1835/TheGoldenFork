@@ -105,7 +105,7 @@ function MenuItems() {
         </h2>
         <p className="text-muted-foreground mt-1">
           {selectedCategory ? `Discover delicious ${selectedCategory} dishes` : 'Browse everything fresh from our kitchen'}
-          <p> Just click the items to add to cart...!</p>
+          <span className="text-orange-600 ml-2"> Just click the items to add to cart...!</span>
         </p>
       </div>
 
