@@ -159,6 +159,11 @@ export default function InfiniteMenu({ items = [], onItemClick, infinite = true 
                 {it.description && (
                   <p className="mt-1 line-clamp-1 text-xs text-white/80">{it.description}</p>
                 )}
+                { !infinite &&
+                  <span className="text-sm font-semibold text-white">
+                    ₹{it.price}
+                  </span>
+                }
               </div>
             </button>
           ))}
@@ -191,5 +196,3 @@ export default function InfiniteMenu({ items = [], onItemClick, infinite = true 
     </div>
   );
 }
-
-
