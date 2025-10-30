@@ -8,6 +8,8 @@ import { Toaster, toast } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { usePathname } from "next/navigation";
+import StructuredData from "./_components/StructuredData";
+import { siteConfig } from "./metadata";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,7 +45,30 @@ export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="en" className="dark bg-background text-foreground">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+          <meta name="theme-color" content="#000000" />
+          <meta name="description" content={siteConfig.description} />
+          <meta name="keywords" content={siteConfig.keywords.join(", ")} />
+          <link rel="canonical" href={siteConfig.url} />
+          
+          {/* Open Graph / Facebook */}
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content={siteConfig.url} />
+          <meta property="og:title" content={siteConfig.title} />
+          <meta property="og:description" content={siteConfig.description} />
+          <meta property="og:image" content={siteConfig.ogImage} />
+          
+          {/* Twitter */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:url" content={siteConfig.url} />
+          <meta name="twitter:title" content={siteConfig.title} />
+          <meta name="twitter:description" content={siteConfig.description} />
+          <meta name="twitter:image" content={siteConfig.ogImage} />
+        </head>
         <body className={`${inter.className} antialiased selection:bg-primary/15 selection:text-foreground` }>
+          <StructuredData />
           <CartProvider>
             <WelcomeToast />
             <Toaster />
