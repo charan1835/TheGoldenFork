@@ -148,7 +148,7 @@ export default function ContactPage() {
                       <div>
                         <p className="text-sm font-medium text-slate-400 mb-1">Email Us</p>
                         <a href="mailto:info@hotelmadiina.com" className="text-white hover:text-violet-400 transition-colors font-medium">
-                          info@hotelmadiina.com
+                          info@GoldenFork.com
                         </a>
                       </div>
                     </div>
@@ -171,7 +171,7 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-slate-400 mb-1">Visit Us</p>
-                        <p className="text-white font-medium">Hotel Madiina</p>
+                        <p className="text-white font-medium">GoldenFork</p>
                         <p className="text-slate-300 text-sm">Kurnool, Andhra Pradesh</p>
                       </div>
                     </div>
@@ -192,11 +192,11 @@ export default function ContactPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-300">Reception</span>
-                      <span className="text-white font-semibold">24/7</span>
+                      <span className="text-white font-semibold">18/7</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-300">Restaurant</span>
-                      <span className="text-white font-semibold">7 AM - 11 PM</span>
+                      <span className="text-slate-300">Order Delivery</span>
+                      <span className="text-white font-semibold"> 11AM - 11 PM</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-300">Response Time</span>
