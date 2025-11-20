@@ -122,7 +122,7 @@ export default function ContactPage() {
               </span>
             </h1>
             <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-              Whether you're planning an event, have questions about our services, or just want to say hello — we're here to help make your experience exceptional.
+              Whether you have feedback, a query about our food services, or just want to chat, we're eager to hear from you and make your experience exceptional.
             </p>
           </div>
 
