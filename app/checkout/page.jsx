@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import {
+import { 
   ArrowLeft,
   MapPin,
   Phone,
@@ -19,7 +19,6 @@ import {
   Lock,
   MessageSquare
 } from "lucide-react";
-import Script from "next/script";
 import { useCart } from "../context/CartContext";
 import GlobalApi from "../_utils/GlobalApi";
 import toast from "react-hot-toast";
@@ -47,7 +46,6 @@ export default function CheckoutPage() {
 
   // Form validation state
   const [errors, setErrors] = useState({});
-  const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
 
   const fetchCartItems = async () => {
     try {
@@ -74,16 +72,29 @@ export default function CheckoutPage() {
       setLoading(false);
     }
   }, [user]);
-
+ 
+  // Load Razorpay checkout script once on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+      // script.onload = () => {
+      //   window.Razorpay = window.Razorpay || {};
+      // };
+    }
+  }, []);
+  
   const calculateSubtotal = () => {
     return cartItems.reduce((total, item) => total + (item.price || 0), 0);
   };
-
+  
   const calculateDeliveryFee = () => {
     const subtotal = calculateSubtotal();
     return subtotal > 500 ? 0 : 50;
   };
-
+  
   const calculateGST = () => {
     const subtotal = calculateSubtotal();
     return subtotal * 0.18;
@@ -92,14 +103,14 @@ export default function CheckoutPage() {
   const calculateTotal = () => {
     return calculateSubtotal() + calculateDeliveryFee() + calculateGST();
   };
-
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setAddressForm(prev => ({
       ...prev,
       [name]: value
     }));
-
+    
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -111,7 +122,7 @@ export default function CheckoutPage() {
 
   const validateForm = () => {
     const newErrors = {};
-
+    
     if (!addressForm.fullName.trim()) newErrors.fullName = "Full name is required";
     if (!addressForm.phone.trim()) newErrors.phone = "Phone number is required";
     else if (!/^\d{10}$/.test(addressForm.phone.replace(/\D/g, ""))) {
@@ -139,12 +150,6 @@ export default function CheckoutPage() {
 
     // If payment is via Razorpay, initiate payment flow
     if (selectedPayment === "razorpay") {
-      if (!isRazorpayLoaded) {
-        toast.error("Razorpay SDK failed to load. Please check your connection.");
-        setPlacing(false);
-        return;
-      }
-
       const totalAmount = calculateTotal();
 
       const options = {
@@ -157,7 +162,7 @@ export default function CheckoutPage() {
         handler: async function (response) {
           // This function is called after successful payment
           console.log("Razorpay payment successful:", response);
-
+          
           // Now, save the order to the database
           try {
             const savedOrder = await saveOrderToDB("razorpay", response.razorpay_payment_id);
@@ -366,14 +371,9 @@ export default function CheckoutPage() {
       </div>
     );
   }
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        onLoad={() => setIsRazorpayLoaded(true)}
-        onError={() => toast.error("Razorpay SDK failed to load")}
-      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6 sm:mb-8">
@@ -400,7 +400,7 @@ export default function CheckoutPage() {
                 <MapPin className="w-5 h-5 text-orange-600" />
                 Delivery Address
               </h2>
-
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -413,8 +413,9 @@ export default function CheckoutPage() {
                       name="fullName"
                       value={addressForm.fullName}
                       onChange={handleInputChange}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${errors.fullName ? "border-red-500" : "border-gray-300"
-                        }`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                        errors.fullName ? "border-red-500" : "border-gray-300"
+                      }`}
                       placeholder="Enter your full name"
                     />
                   </div>
@@ -437,8 +438,9 @@ export default function CheckoutPage() {
                       name="phone"
                       value={addressForm.phone}
                       onChange={handleInputChange}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${errors.phone ? "border-red-500" : "border-gray-300"
-                        }`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${
+                        errors.phone ? "border-red-500" : "border-gray-300"
+                      }`}
                       placeholder="Enter phone number"
                     />
                   </div>
@@ -459,8 +461,9 @@ export default function CheckoutPage() {
                     value={addressForm.address}
                     onChange={handleInputChange}
                     rows={3}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${errors.address ? "border-red-500" : "border-gray-300"
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${
+                      errors.address ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="Enter your complete address"
                   />
                   {errors.address && (
@@ -480,8 +483,9 @@ export default function CheckoutPage() {
                     name="city"
                     value={addressForm.city}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${errors.city ? "border-red-500" : "border-gray-300"
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${
+                      errors.city ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="Enter city"
                   />
                   {errors.city && (
@@ -501,8 +505,9 @@ export default function CheckoutPage() {
                     name="state"
                     value={addressForm.state}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${errors.state ? "border-red-500" : "border-gray-300"
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${
+                      errors.state ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="Enter state"
                   />
                   {errors.state && (
@@ -522,8 +527,9 @@ export default function CheckoutPage() {
                     name="pincode"
                     value={addressForm.pincode}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${errors.pincode ? "border-red-500" : "border-gray-300"
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-black focus:ring-orange-500 ${
+                      errors.pincode ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="Enter pincode"
                   />
                   {errors.pincode && (
@@ -570,34 +576,38 @@ export default function CheckoutPage() {
             {/* Payment Methods */}
             <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Payment Methods</h2>
-
+              
               <div className="space-y-3">
                 {paymentMethods.map((method) => (
                   <div key={method.id} className={`relative`}>
                     <div
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${method.available
-                        ? selectedPayment === method.id
-                          ? "border-orange-500 bg-orange-50"
-                          : "border-gray-300 hover:border-gray-400"
-                        : "border-gray-200 bg-gray-50 cursor-not-allowed opacity-60"
-                        }`}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        method.available 
+                          ? selectedPayment === method.id
+                            ? "border-orange-500 bg-orange-50"
+                            : "border-gray-300 hover:border-gray-400"
+                          : "border-gray-200 bg-gray-50 cursor-not-allowed opacity-60"
+                      }`}
                       onClick={() => method.available && setSelectedPayment(method.id)}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${method.available && selectedPayment === method.id
-                          ? "border-orange-500 bg-orange-500"
-                          : "border-gray-300"
-                          }`}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          method.available && selectedPayment === method.id
+                            ? "border-orange-500 bg-orange-500"
+                            : "border-gray-300"
+                        }`}>
                           {method.available && selectedPayment === method.id && (
                             <CheckCircle className="w-3 h-3 text-white" />
                           )}
                         </div>
-                        <method.icon className={`w-5 h-5 ${method.available ? "text-gray-600" : "text-gray-400"
-                          }`} />
+                        <method.icon className={`w-5 h-5 ${
+                          method.available ? "text-gray-600" : "text-gray-400"
+                        }`} />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h3 className={`font-medium ${method.available ? "text-gray-800" : "text-gray-500"
-                              }`}>
+                            <h3 className={`font-medium ${
+                              method.available ? "text-gray-800" : "text-gray-500"
+                            }`}>
                               {method.name}
                             </h3>
                             {!method.available && (
@@ -606,8 +616,9 @@ export default function CheckoutPage() {
                               </span>
                             )}
                           </div>
-                          <p className={`text-sm ${method.available ? "text-gray-600" : "text-gray-400"
-                            }`}>
+                          <p className={`text-sm ${
+                            method.available ? "text-gray-600" : "text-gray-400"
+                          }`}>
                             {method.description}
                           </p>
                         </div>
@@ -623,7 +634,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-1 mt-6 lg:mt-0">
             <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 sticky top-4">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h2>
-
+              
               {/* Cart Items */}
               <div className="space-y-3 mb-4">
                 {cartItems.map((item) => (
@@ -663,7 +674,7 @@ export default function CheckoutPage() {
                     <span>{calculateSubtotal()}</span>
                   </div>
                 </div>
-
+                
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">GST</span>
                   <div className="flex items-center font-medium text-black">
@@ -671,7 +682,7 @@ export default function CheckoutPage() {
                     <span>{calculateGST(calculateSubtotal())}</span>
                   </div>
                 </div>
-
+                
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Delivery Fee</span>
                   <div className="flex items-center font-medium text-black">
@@ -685,13 +696,13 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 </div>
-
+                
                 {calculateSubtotal() > 0 && calculateSubtotal() <= 500 && (
                   <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
                     Add ₹{500 - calculateSubtotal()} more for free delivery
                   </div>
                 )}
-
+                
                 <div className="border-t pt-3">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-black">Total</span>
@@ -702,7 +713,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
-
+              
               <button
                 onClick={handlePlaceOrder}
                 disabled={placing}
@@ -720,7 +731,7 @@ export default function CheckoutPage() {
                   </>
                 )}
               </button>
-
+              
               <div className="mt-3 text-center text-sm text-gray-500">
                 <Lock className="w-4 h-4 inline mr-1" />
                 Your order details are secure

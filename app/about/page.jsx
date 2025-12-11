@@ -21,7 +21,7 @@ export default function AboutPage() {
             It all started in a small, sun-drenched village in Kerala, where the aroma of roasting spices and freshly ground coconut filled the air every morning. Our founder, inspired by his grandmother's kitchen—a place where food was a language of love—dreamed of sharing these timeless flavors with the world.
           </p>
           <p className="text-gray-700 leading-relaxed">
-            Hotel Madiina was born from a desire to recreate that authentic experience. From a modest stall serving just chai and vada, we have grown into a culinary destination, but our heart remains the same: rooted in tradition, driven by passion, and dedicated to the art of South Indian hospitality.
+            The GoldenFork was born from a desire to recreate that authentic experience. From a modest stall serving just chai and vada, we have grown into a culinary destination, but our heart remains the same: rooted in tradition, driven by passion, and dedicated to the art of South Indian hospitality.
           </p>
         </div>
         <div className="relative aspect-video order-1 md:order-2 rounded-2xl overflow-hidden shadow-xl border-4 border-orange-100">
@@ -60,7 +60,7 @@ export default function AboutPage() {
         <div>
           <h3 className="text-3xl font-semibold text-orange-700 mb-6">Our Philosophy: Atithi Devo Bhava</h3>
           <p className="mb-4 text-gray-700 leading-relaxed">
-            "The Guest is God." This ancient Sanskrit verse is the cornerstone of our service. At Hotel Madiina, we don't just serve food; we serve memories. We believe in the sanctity of fresh ingredients, sourcing our spices directly from farmers in the Western Ghats and our vegetables from local growers.
+            "The Guest is God." This ancient Sanskrit verse is the cornerstone of our service. At GoldenFork, we don't just serve food; we serve memories. We believe in the sanctity of fresh ingredients, sourcing our spices directly from farmers in the Western Ghats and our vegetables from local growers.
           </p>
           <p className="text-gray-700 leading-relaxed">
             We are committed to sustainability and authenticity. No shortcuts, no artificial preservatives—just pure, wholesome food prepared with the same care and devotion as a meal cooked at home. This is our promise to you.
