@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import GlobalApi from "../_utils/GlobalApi";
 import { useRouter } from "next/navigation";
-import { Loader2, ShoppingBag, IndianRupee, MapPin, Calendar, CreditCard, Package } from "lucide-react";
+import { Loader2, ShoppingBag, IndianRupee, MapPin, Calendar, CreditCard, Package, RotateCcw, Hash } from "lucide-react";
 
 const MyOrdersPage = () => {
   const { user } = useUser();
@@ -82,7 +82,7 @@ const MyOrdersPage = () => {
               onClick={() => router.push("/")}
             >
               Start Ordering
-            </button> 
+            </button>
           </div>
         ) : (
           <div className="space-y-6">
@@ -91,11 +91,17 @@ const MyOrdersPage = () => {
                 {/* Order Header */}
                 <div className="bg-gradient-to-r from-primary/5 to-accent/10 px-6 py-4 border-b border-border/60">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center text-muted-foreground">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <span className="font-medium text-foreground">{new Date(order.orderdate).toLocaleDateString()}</span>
-                        <span className="ml-2">{new Date(order.orderdate).toLocaleTimeString()}</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                      <div className="flex items-center text-foreground font-semibold bg-white/50 px-3 py-1 rounded-full border border-border/50">
+                        <Hash className="w-3 h-3 mr-2 text-primary" />
+                        <span className="text-xs font-mono">{order.id?.slice(-8)}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center text-muted-foreground">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          <span className="font-medium text-foreground">{new Date(order.orderdate).toLocaleDateString()}</span>
+                          <span className="ml-2">{new Date(order.orderdate).toLocaleTimeString()}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -120,7 +126,7 @@ const MyOrdersPage = () => {
                     <div className="space-y-3">
                       {(() => {
                         let items = order.items;
-                        
+
                         if (typeof items === 'string') {
                           try {
                             items = JSON.parse(items);
@@ -129,7 +135,7 @@ const MyOrdersPage = () => {
                             items = [];
                           }
                         }
-                        
+
                         if (items && Array.isArray(items) && items.length > 0) {
                           return items.map((item, itemIndex) => (
                             <div key={itemIndex} className="flex justify-between items-center p-3 bg-background rounded-lg border border-border/60">
@@ -188,6 +194,18 @@ const MyOrdersPage = () => {
                         </div>
                       </div>
                     </div>
+                  </div>
+                  {/* Order Actions */}
+                  <div className="bg-gray-50 px-6 py-4 border-t border-border/60 flex justify-end">
+                    <a
+                      href="https://return-automation.vercel.app/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2 text-gray-500" />
+                      Cancel or Return Order
+                    </a>
                   </div>
                 </div>
               </div>
