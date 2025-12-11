@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import GlobalApi from "../_utils/GlobalApi";
 import { useRouter } from "next/navigation";
-import { Loader2, ShoppingBag, IndianRupee, MapPin, Calendar, CreditCard, Package, RotateCcw, Hash } from "lucide-react";
+import { Loader2, ShoppingBag, IndianRupee, MapPin, Calendar, CreditCard, Package, RotateCcw, Hash, Copy, Check } from "lucide-react";
 
 const MyOrdersPage = () => {
   const { user } = useUser();
@@ -43,6 +43,14 @@ const MyOrdersPage = () => {
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  const [copiedId, setCopiedId] = useState(null);
+
+  const handleCopy = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   if (loading) {
@@ -96,6 +104,17 @@ const MyOrdersPage = () => {
                         <Hash className="w-3 h-3 mr-2 text-primary" />
                         <span className="text-xs font-mono">{order.id?.slice(-8)}</span>
                       </div>
+                      <button
+                        onClick={() => handleCopy(order.id?.slice(-8), order.id)}
+                        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                        title="Copy Order ID"
+                      >
+                        {copiedId === order.id ? (
+                          <Check className="w-3.5 h-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                        )}
+                      </button>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center text-muted-foreground">
                           <Calendar className="w-4 h-4 mr-2" />
